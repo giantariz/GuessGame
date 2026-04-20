@@ -10,20 +10,26 @@ let answerRevealed = false;
 let sequencePointer = 0;
 
 const el = {
+  // Players tab
   playersList: document.getElementById('playersList'),
   playerName: document.getElementById('playerName'),
   addPlayerBtn: document.getElementById('addPlayerBtn'),
   resetScoresBtn: document.getElementById('resetScoresBtn'),
+  tabBadgePlayers: document.getElementById('tabBadgePlayers'),
+  // Game settings
   timerSeconds: document.getElementById('timerSeconds'),
   categorySelect: document.getElementById('categorySelect'),
   modeSelect: document.getElementById('modeSelect'),
+  // Game controls
   startRoundBtn: document.getElementById('startRoundBtn'),
   revealBtn: document.getElementById('revealBtn'),
   stopTimerBtn: document.getElementById('stopTimerBtn'),
   nextQuestionBtn: document.getElementById('nextQuestionBtn'),
+  // Status
   roundCounter: document.getElementById('roundCounter'),
   timeDisplay: document.getElementById('timeDisplay'),
   questionCount: document.getElementById('questionCount'),
+  // Question card
   questionNumber: document.getElementById('questionNumber'),
   questionText: document.getElementById('questionText'),
   categoryPill: document.getElementById('categoryPill'),
@@ -33,25 +39,59 @@ const el = {
   roundNote: document.getElementById('roundNote'),
   answerValue: document.getElementById('answerValue'),
   toggleAnswerBtn: document.getElementById('toggleAnswerBtn'),
-  markRoundDoneBtn: document.getElementById('markRoundDoneBtn'),
+  // Questions tab
   searchInput: document.getElementById('searchInput'),
   questionsList: document.getElementById('questionsList'),
-  jsonInput: document.getElementById('jsonInput'),
-  importJsonBtn: document.getElementById('importJsonBtn'),
+  // Create tab
+  createJsonInput: document.getElementById('createJsonInput'),
+  loadCreatedQuestionsBtn: document.getElementById('loadCreatedQuestionsBtn'),
   restoreDefaultBtn: document.getElementById('restoreDefaultBtn'),
-  importStatus: document.getElementById('importStatus'),
+  createImportStatus: document.getElementById('createImportStatus'),
+  categoryCheckboxesContainer: document.getElementById('categoryCheckboxesContainer'),
+  createQuestionCount: document.getElementById('createQuestionCount'),
+  generatePromptBtn: document.getElementById('generatePromptBtn'),
+  promptOutput: document.getElementById('promptOutput'),
+  copyPromptBtn: document.getElementById('copyPromptBtn'),
+  promptSection: document.getElementById('promptSection'),
+  // Presenter
+  presenterOverlay: document.getElementById('presenterOverlay'),
+  presenterExitBtn: document.getElementById('presenterExitBtn'),
+  presenterNumber: document.getElementById('presenterNumber'),
+  presenterText: document.getElementById('presenterText'),
+  presenterCategory: document.getElementById('presenterCategory'),
+  presenterTimerFill: document.getElementById('presenterTimerFill'),
+  presenterAnswer: document.getElementById('presenterAnswer'),
+  presenterLaunchBtn: document.getElementById('presenterLaunchBtn'),
+  // Tabs
+  tabTriggers: document.querySelectorAll('[data-tab-trigger]'),
+  tabPanels: document.querySelectorAll('.tab-panel'),
+  // Theme
   themeToggle: document.querySelector('[data-theme-toggle]')
 };
 
 const html = document.documentElement;
 let theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
+// ── Theme ─────────────────────────────────────────
 function applyTheme() {
   html.setAttribute('data-theme', theme);
   el.themeToggle.textContent = theme === 'dark' ? '☀️' : '🌙';
   el.themeToggle.setAttribute('aria-label', theme === 'dark' ? 'Άλλαξε σε φωτεινό θέμα' : 'Άλλαξε σε σκοτεινό θέμα');
 }
 
+// ── Tab system ────────────────────────────────────
+function switchTab(tabName) {
+  el.tabTriggers.forEach(btn => {
+    const active = btn.dataset.tabTrigger === tabName;
+    btn.classList.toggle('tab-btn--active', active);
+    btn.setAttribute('aria-selected', active);
+  });
+  el.tabPanels.forEach(panel => {
+    panel.classList.toggle('tab-panel--active', panel.id === `panel-${tabName}`);
+  });
+}
+
+// ── Categories ────────────────────────────────────
 function populateCategories() {
   const categories = [...new Set(questions.map(q => q.category))].sort((a, b) => a.localeCompare(b, 'el'));
   el.categorySelect.innerHTML = '<option value="all">Όλες</option>';
@@ -63,9 +103,11 @@ function populateCategories() {
   });
 }
 
+// ── Players ───────────────────────────────────────
 function renderPlayers() {
   if (players.length === 0) {
-    el.playersList.innerHTML = '<div class="muted">Δεν έχεις βάλει ακόμα παίκτες. Βάλε τουλάχιστον δύο για να έχει νόημα το σκορ.</div>';
+    el.playersList.innerHTML = '<div class="muted" style="padding:var(--space-4) 0; font-size:var(--text-sm);">Δεν έχεις βάλει ακόμα παίκτες. Βάλε τουλάχιστον δύο για να έχει νόημα το σκορ.</div>';
+    el.tabBadgePlayers.textContent = 0;
     return;
   }
   const sorted = [...players].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, 'el'));
@@ -73,24 +115,25 @@ function renderPlayers() {
     <div class="player-row">
       <div>
         <div class="player-name">${index + 1}. ${player.name}</div>
-        <div class="muted" style="font-size: var(--text-xs);">host δίνει τον πόντο χειροκίνητα</div>
       </div>
       <div class="score-badge">${player.score}</div>
-      <div class="inline-actions" style="gap: .4rem; justify-content:flex-end;">
+      <div class="inline-actions" style="gap:.4rem; justify-content:flex-end;">
         <button class="mini-btn" type="button" data-player-action="plus" data-player-id="${player.id}">+1</button>
         <button class="mini-btn" type="button" data-player-action="minus" data-player-id="${player.id}">-1</button>
         <button class="mini-btn" type="button" data-player-action="remove" data-player-id="${player.id}">✕</button>
       </div>
     </div>
   `).join('');
+  el.tabBadgePlayers.textContent = players.length;
 }
 
 function updateCounters() {
   el.roundCounter.textContent = round;
   el.questionCount.textContent = questions.length;
-  el.modePill.textContent = el.modeSelect.value === 'random' ? 'τυχαία ερώτηση' : 'σειριακή ροή';
+  el.modePill.textContent = el.modeSelect.value === 'random' ? 'τυχαία' : 'σειριακή';
 }
 
+// ── Timer ─────────────────────────────────────────
 function stopTimer() {
   if (timerInterval) {
     clearInterval(timerInterval);
@@ -101,15 +144,19 @@ function stopTimer() {
 function updateTimerUI() {
   el.timeDisplay.textContent = currentQuestionIndex === null ? '--' : `${timeLeft}s`;
   const width = currentDuration > 0 ? Math.max(0, (timeLeft / currentDuration) * 100) : 0;
-  el.timerFill.style.width = `${width}%`;
+  const widthStr = `${width}%`;
+  el.timerFill.style.width = widthStr;
   if (currentQuestionIndex === null) {
-    el.timerMessage.textContent = 'Το timer θα ξεκινήσει με τον επόμενο γύρο.';
+    el.timerMessage.textContent = 'Το timer θα ξεκινήσει με την επόμενη ερώτηση.';
   } else if (timeLeft > 10) {
     el.timerMessage.textContent = 'Ο γύρος τρέχει κανονικά.';
   } else if (timeLeft > 0) {
     el.timerMessage.textContent = 'Τελευταία δευτερόλεπτα — κλείσε απαντήσεις.';
   } else {
     el.timerMessage.textContent = 'Ο χρόνος έληξε. Τώρα δείξε τη σωστή απάντηση και δώσε πόντο.';
+  }
+  if (presenterActive) {
+    el.presenterTimerFill.style.width = widthStr;
   }
 }
 
@@ -128,6 +175,7 @@ function startTimer(duration) {
   }, 1000);
 }
 
+// ── Question selection ────────────────────────────
 function getFilteredIndexes() {
   const category = el.categorySelect.value;
   return questions.map((item, index) => ({ item, index }))
@@ -160,8 +208,8 @@ function pickNextQuestionIndex() {
 
 function loadQuestion(index) {
   if (index === null || !questions[index]) {
-    el.questionNumber.textContent = 'Δεν βρέθηκε ερώτηση';
-    el.questionText.textContent = 'Άλλαξε κατηγορία ή φόρτωσε νέο σετ ερωτήσεων.';
+    el.questionNumber.textContent = 'Πάτα «Νέα ερώτηση» για να ξεκινήσεις';
+    el.questionText.textContent = 'Δεν έχει φορτωθεί ακόμα ερώτηση.';
     el.categoryPill.textContent = '—';
     el.answerValue.textContent = '—';
     el.answerValue.classList.remove('revealed');
@@ -177,7 +225,8 @@ function loadQuestion(index) {
   el.categoryPill.textContent = item.category;
   el.answerValue.textContent = item.answer;
   el.answerValue.classList.remove('revealed');
-  el.roundNote.textContent = 'Οι παίκτες γράφουν τώρα απάντηση. Όταν τελειώσει ο χρόνος, πατάς εμφάνιση απάντησης και μετά απονέμεις πόντο στο scoreboard.';
+  el.roundNote.textContent = 'Οι παίκτες γράφουν τώρα απάντηση. Όταν τελειώσει ο χρόνος, πατάς «Δείξε / κρύψε» και μετά απονέμεις πόντο από την καρτέλα Παίκτες.';
+  if (presenterActive) syncPresenterCard();
 }
 
 function startRound() {
@@ -198,14 +247,12 @@ function toggleAnswer() {
   if (currentQuestionIndex === null) return;
   answerRevealed = !answerRevealed;
   el.answerValue.classList.toggle('revealed', answerRevealed);
+  if (presenterActive) {
+    el.presenterAnswer.classList.toggle('revealed', answerRevealed);
+  }
 }
 
-function closeRound() {
-  stopTimer();
-  el.roundNote.textContent = 'Ο γύρος έκλεισε. Αν θέλεις, δώσε πόντο στον νικητή και μετά πάτα επόμενη ερώτηση.';
-  updateTimerUI();
-}
-
+// ── Players ───────────────────────────────────────
 function addPlayer() {
   const name = el.playerName.value.trim();
   if (!name) return;
@@ -229,6 +276,7 @@ function resetScores() {
   renderPlayers();
 }
 
+// ── Question bank ─────────────────────────────────
 function renderQuestionBank() {
   const term = el.searchInput.value.trim().toLowerCase();
   const matches = questions.filter(item => (`${item.category} ${item.question} ${item.answer}`).toLowerCase().includes(term));
@@ -238,13 +286,14 @@ function renderQuestionBank() {
   }
   el.questionsList.innerHTML = matches.map((item, idx) => `
     <div class="answer-box">
-      <div class="question-number">${idx + 1} • ${item.category}</div>
+      <div class="question-number">${idx + 1} · ${item.category}</div>
       <div style="font-weight:700; margin:.35rem 0 .5rem;">${item.question}</div>
-      <div class="muted">Απάντηση: ${item.answer}</div>
+      <div class="muted" style="font-size:var(--text-sm);">Απάντηση: ${item.answer}</div>
     </div>
   `).join('');
 }
 
+// ── JSON validation ───────────────────────────────
 function validateImportedQuestions(data) {
   if (!Array.isArray(data) || data.length === 0) throw new Error('Το JSON πρέπει να είναι μη κενό array.');
   data.forEach((item, index) => {
@@ -255,31 +304,6 @@ function validateImportedQuestions(data) {
   });
 }
 
-function importJson() {
-  const raw = el.jsonInput.value.trim();
-  if (!raw) {
-    el.importStatus.textContent = 'Δεν έβαλες JSON.';
-    return;
-  }
-  try {
-    const parsed = JSON.parse(raw);
-    validateImportedQuestions(parsed);
-    questions = parsed.map(item => ({ category: item.category.trim(), question: item.question.trim(), answer: item.answer.trim() }));
-    usedQuestionIndexes = [];
-    sequencePointer = 0;
-    currentQuestionIndex = null;
-    round = 0;
-    stopTimer();
-    populateCategories();
-    updateCounters();
-    renderQuestionBank();
-    loadQuestion(null);
-    el.importStatus.textContent = `Φορτώθηκαν ${questions.length} ερωτήσεις από JSON.`;
-  } catch (error) {
-    el.importStatus.textContent = `Σφάλμα JSON: ${error.message}`;
-  }
-}
-
 function restoreDefaults() {
   questions = [...defaultQuestions];
   usedQuestionIndexes = [];
@@ -288,28 +312,180 @@ function restoreDefaults() {
   round = 0;
   stopTimer();
   populateCategories();
+  populateCreatorCategories();
   updateCounters();
   renderQuestionBank();
   loadQuestion(null);
-  el.importStatus.textContent = 'Έγινε επαναφορά στο default σετ.';
+  el.createImportStatus.textContent = 'Έγινε επαναφορά στο default σετ (50 ερωτήσεις).';
 }
 
+// ── Presenter mode ────────────────────────────────
+let presenterActive = false;
+
+function syncPresenterCard() {
+  el.presenterNumber.textContent = el.questionNumber.textContent;
+  el.presenterText.textContent = el.questionText.textContent;
+  el.presenterCategory.textContent = el.categoryPill.textContent;
+  el.presenterAnswer.textContent = el.answerValue.textContent;
+  el.presenterAnswer.classList.toggle('revealed', answerRevealed);
+  const width = currentDuration > 0 ? Math.max(0, (timeLeft / currentDuration) * 100) : 0;
+  el.presenterTimerFill.style.width = `${width}%`;
+}
+
+function enterPresenterMode() {
+  presenterActive = true;
+  syncPresenterCard();
+  el.presenterOverlay.classList.add('presenter-overlay--active');
+  el.presenterOverlay.setAttribute('aria-hidden', 'false');
+  document.body.style.overflow = 'hidden';
+}
+
+function exitPresenterMode() {
+  presenterActive = false;
+  el.presenterOverlay.classList.remove('presenter-overlay--active');
+  el.presenterOverlay.setAttribute('aria-hidden', 'true');
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('keydown', event => {
+  if (!presenterActive) return;
+  switch (event.key) {
+    case ' ':
+      event.preventDefault();
+      toggleAnswer();
+      break;
+    case 'n':
+    case 'N':
+      event.preventDefault();
+      startRound();
+      break;
+    case 'f':
+    case 'F':
+      event.preventDefault();
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+      break;
+    case 'Escape':
+      exitPresenterMode();
+      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+      break;
+  }
+});
+
+// ── Question creator ──────────────────────────────
+function populateCreatorCategories() {
+  const categories = [...new Set(questions.map(q => q.category))].sort((a, b) => a.localeCompare(b, 'el'));
+  el.categoryCheckboxesContainer.innerHTML = categories.map(cat => `
+    <label class="category-checkbox-label">
+      <input type="checkbox" value="${cat}" checked />
+      ${cat}
+    </label>
+  `).join('');
+}
+
+function getCheckedCategories() {
+  return [...el.categoryCheckboxesContainer.querySelectorAll('input[type="checkbox"]:checked')]
+    .map(cb => cb.value);
+}
+
+function generateAIPrompt() {
+  const categories = getCheckedCategories();
+  const count = parseInt(el.createQuestionCount.value, 10) || 20;
+  if (categories.length === 0) {
+    el.createImportStatus.textContent = 'Επίλεξε τουλάχιστον μία κατηγορία.';
+    return;
+  }
+  el.createImportStatus.textContent = '';
+  const categoryList = categories.map(c => `"${c}"`).join(', ');
+  const prompt = `Δημιούργησε ${count} ερωτήσεις τύπου "closest answer" στα Ελληνικά.
+
+Ο παίκτης πρέπει να μαντέψει έναν αριθμό ή ποσότητα — κερδίζει όποιος απαντήσει πιο κοντά.
+
+Κατηγορίες που θέλω: ${categoryList}
+
+Κανόνες:
+- Κάθε ερώτηση να έχει αριθμητική ή εκτιμητική απάντηση
+- Οι ερωτήσεις να είναι ενδιαφέρουσες και κατάλληλες για παρέα ή τάξη
+- Μοιράσε τις ερωτήσεις ισόποσα ανάμεσα στις κατηγορίες
+- Σύντομη απάντηση (π.χ. "≈ 150 km", "42", "≈ 3.000 χρόνια")
+
+Επέστρεψε ΜΟΝΟ ένα JSON array χωρίς επεξήγηση και χωρίς markdown, με αυτή τη μορφή:
+[
+  {
+    "category": "Κατηγορία",
+    "question": "Κείμενο ερώτησης;",
+    "answer": "Απάντηση"
+  }
+]`;
+  el.promptOutput.value = prompt;
+  el.promptSection.style.display = 'block';
+}
+
+function copyPrompt() {
+  if (!el.promptOutput.value) return;
+  const original = el.copyPromptBtn.textContent;
+  navigator.clipboard.writeText(el.promptOutput.value).then(() => {
+    el.copyPromptBtn.textContent = '✓ Αντιγράφηκε!';
+    setTimeout(() => { el.copyPromptBtn.textContent = original; }, 2000);
+  }).catch(() => {
+    el.promptOutput.select();
+    document.execCommand('copy');
+  });
+}
+
+function loadCreatedQuestions() {
+  const raw = el.createJsonInput.value.trim();
+  if (!raw) {
+    el.createImportStatus.textContent = 'Δεν έβαλες JSON.';
+    return;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    validateImportedQuestions(parsed);
+    questions = parsed.map(item => ({
+      category: item.category.trim(),
+      question: item.question.trim(),
+      answer: item.answer.trim()
+    }));
+    usedQuestionIndexes = [];
+    sequencePointer = 0;
+    currentQuestionIndex = null;
+    round = 0;
+    stopTimer();
+    populateCategories();
+    populateCreatorCategories();
+    updateCounters();
+    renderQuestionBank();
+    loadQuestion(null);
+    el.createImportStatus.textContent = `✓ Φορτώθηκαν ${questions.length} ερωτήσεις. Πήγαινε στην καρτέλα Παιχνίδι!`;
+  } catch (error) {
+    el.createImportStatus.textContent = `Σφάλμα JSON: ${error.message}`;
+  }
+}
+
+// ── Event listeners ───────────────────────────────
 el.themeToggle.addEventListener('click', () => {
   theme = theme === 'dark' ? 'light' : 'dark';
   applyTheme();
 });
+
+el.tabTriggers.forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tabTrigger));
+});
+
 el.addPlayerBtn.addEventListener('click', addPlayer);
 el.playerName.addEventListener('keydown', event => { if (event.key === 'Enter') addPlayer(); });
 el.resetScoresBtn.addEventListener('click', resetScores);
+
 el.startRoundBtn.addEventListener('click', startRound);
 el.nextQuestionBtn.addEventListener('click', startRound);
 el.revealBtn.addEventListener('click', toggleAnswer);
-el.toggleAnswerBtn.addEventListener('click', toggleAnswer);
 el.stopTimerBtn.addEventListener('click', stopTimer);
-el.markRoundDoneBtn.addEventListener('click', closeRound);
+
 el.searchInput.addEventListener('input', renderQuestionBank);
-el.importJsonBtn.addEventListener('click', importJson);
-el.restoreDefaultBtn.addEventListener('click', restoreDefaults);
 el.modeSelect.addEventListener('change', updateCounters);
 
 el.playersList.addEventListener('click', event => {
@@ -321,10 +497,21 @@ el.playersList.addEventListener('click', event => {
   if (playerAction === 'remove') removePlayer(playerId);
 });
 
+el.presenterLaunchBtn.addEventListener('click', enterPresenterMode);
+el.presenterExitBtn.addEventListener('click', exitPresenterMode);
+
+el.generatePromptBtn.addEventListener('click', generateAIPrompt);
+el.copyPromptBtn.addEventListener('click', copyPrompt);
+el.loadCreatedQuestionsBtn.addEventListener('click', loadCreatedQuestions);
+el.restoreDefaultBtn.addEventListener('click', restoreDefaults);
+
+// ── Init ──────────────────────────────────────────
 applyTheme();
 populateCategories();
+populateCreatorCategories();
 updateCounters();
 renderPlayers();
 renderQuestionBank();
 loadQuestion(null);
 updateTimerUI();
+switchTab('game');
