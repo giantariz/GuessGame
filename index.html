@@ -15,34 +15,96 @@
         <div class="logo-mark">≈</div>
         <div>
           <div>Closest Quiz Game Pro</div>
-          <div style="font-size: var(--text-xs); color: var(--color-text-muted);">scoreboard • timer • random round • JSON import</div>
+          <div style="font-size: var(--text-xs); color: var(--color-text-muted);">scoreboard · timer · presenter mode · AI questions</div>
         </div>
       </div>
       <button class="theme-toggle" type="button" data-theme-toggle aria-label="Αλλαγή θέματος">🌙</button>
     </header>
 
-    <section class="hero">
-      <div class="panel hero-main">
-        <div class="badge">Αναβαθμισμένη έκδοση για παρέα</div>
-        <h1>Τώρα με σκορ, χρονόμετρο, τυχαίες ερωτήσεις και δικά σου JSON sets</h1>
-        <p>Ο host δείχνει μία ερώτηση τη φορά, βάζει timer ανά γύρο, αποκαλύπτει τη σωστή απάντηση όταν θέλει και δίνει πόντο στον παίκτη που ήταν πιο κοντά. Μπορείς να παίξεις είτε με το έτοιμο set των 50 ερωτήσεων είτε να φορτώσεις δικό σου.</p>
-      </div>
-      <aside class="panel hero-side">
-        <div>
-          <strong>Ρεαλιστική χρήση</strong>
-          <p>Αυτό είναι host app για ζωντανό παιχνίδι παρέας. Δεν υπολογίζει αυτόματα ποιος ήταν πιο κοντά, γιατί οι παίκτες γράφουν απαντήσεις offline και ο host απονέμει πόντο.</p>
-        </div>
-        <div>
-          <strong>Καλός τρόπος παιχνιδιού</strong>
-          <p>Ξεκινάς γύρο, τρέχει timer 30–45'', κλείνεις απαντήσεις, εμφανίζεις λύση, και μετά δίνεις πόντο από το scoreboard στον νικητή του γύρου.</p>
-        </div>
-      </aside>
-    </section>
+    <nav class="tab-nav" role="tablist" aria-label="Ενότητες παιχνιδιού">
+      <button class="tab-btn tab-btn--active" type="button" data-tab-trigger="game" role="tab" aria-selected="true" aria-controls="panel-game">⚡ Παιχνίδι</button>
+      <button class="tab-btn" type="button" data-tab-trigger="players" role="tab" aria-selected="false" aria-controls="panel-players">👥 Παίκτες <span id="tabBadgePlayers" class="tab-badge">0</span></button>
+      <button class="tab-btn" type="button" data-tab-trigger="questions" role="tab" aria-selected="false" aria-controls="panel-questions">📋 Ερωτήσεις</button>
+      <button class="tab-btn" type="button" data-tab-trigger="create" role="tab" aria-selected="false" aria-controls="panel-create">✨ Δημιουργία</button>
+    </nav>
 
-    <section class="layout">
-      <aside class="sidebar">
+    <div class="tab-panels">
+
+      <!-- ── TAB: Παιχνίδι ─────────────────────────── -->
+      <section class="tab-panel tab-panel--active" id="panel-game" role="tabpanel">
+
         <section class="panel card-pad">
-          <h2 class="section-title">Παίκτες & σκορ</h2>
+          <div class="status-grid">
+            <div class="status-box"><strong>Ερώτηση</strong><span id="roundCounter">0</span></div>
+            <div class="status-box"><strong>Χρόνος</strong><span id="timeDisplay">--</span></div>
+            <div class="status-box"><strong>Σύνολο</strong><span id="questionCount">0</span></div>
+          </div>
+        </section>
+
+        <section class="panel question-card">
+          <div class="question-top">
+            <div style="flex:1; min-width:0;">
+              <div class="question-number" id="questionNumber">Πάτα «Νέα ερώτηση» για να ξεκινήσεις</div>
+              <h2 class="question-text" id="questionText">Δεν έχει φορτωθεί ακόμα ερώτηση.</h2>
+            </div>
+            <div class="question-meta">
+              <span class="pill" id="categoryPill">Κατηγορία</span>
+              <span class="pill" id="modePill">host mode</span>
+            </div>
+          </div>
+
+          <div class="timer-wrap">
+            <div class="timer-bar"><div id="timerFill" class="timer-fill"></div></div>
+            <div class="muted" id="timerMessage" style="font-size:var(--text-sm);">Το timer θα ξεκινήσει με την επόμενη ερώτηση.</div>
+          </div>
+
+          <div class="answer-box">
+            <span class="answer-label">Σωστή απάντηση</span>
+            <div id="answerValue" class="answer-value">—</div>
+          </div>
+
+          <div class="round-note" id="roundNote">Ξεκίνα μία ερώτηση, τρέχει ο timer, οι παίκτες γράφουν απαντήσεις offline, μετά αποκαλύπτεις τη σωστή και δίνεις πόντο από την καρτέλα Παίκτες.</div>
+
+          <div class="game-controls">
+            <button id="startRoundBtn" class="primary-btn" type="button">🎯 Νέα ερώτηση</button>
+            <button id="revealBtn" class="secondary-btn" type="button">👁 Δείξε / κρύψε</button>
+            <button id="stopTimerBtn" class="secondary-btn" type="button">⏹ Σταμάτα timer</button>
+            <button id="nextQuestionBtn" class="danger-btn" type="button">⏭ Παράλειψη</button>
+          </div>
+        </section>
+
+        <section class="panel card-pad">
+          <h2 class="section-title" style="margin-bottom:var(--space-3);">Ρυθμίσεις</h2>
+          <div class="game-settings">
+            <div>
+              <label for="timerSeconds">⏱ Δευτερόλεπτα ανά ερώτηση</label>
+              <input id="timerSeconds" type="number" min="5" max="300" value="30" />
+            </div>
+            <div>
+              <label for="categorySelect">📂 Κατηγορία</label>
+              <select id="categorySelect"><option value="all">Όλες</option></select>
+            </div>
+            <div>
+              <label for="modeSelect">🔀 Λειτουργία</label>
+              <select id="modeSelect">
+                <option value="random">Τυχαία</option>
+                <option value="sequence">Σειριακή</option>
+              </select>
+            </div>
+          </div>
+          <div style="margin-top:var(--space-4);">
+            <button id="presenterLaunchBtn" class="presenter-launch-btn" type="button">
+              🖥 Presenter Mode
+            </button>
+          </div>
+        </section>
+
+      </section>
+
+      <!-- ── TAB: Παίκτες ──────────────────────────── -->
+      <section class="tab-panel" id="panel-players" role="tabpanel">
+        <section class="panel card-pad">
+          <h2 class="section-title">Παίκτες &amp; σκορ</h2>
           <div class="stack">
             <div>
               <label for="playerName">Όνομα παίκτη</label>
@@ -55,113 +117,93 @@
           </div>
           <div id="playersList" class="players-list"></div>
         </section>
+      </section>
 
+      <!-- ── TAB: Ερωτήσεις ────────────────────────── -->
+      <section class="tab-panel" id="panel-questions" role="tabpanel">
         <section class="panel card-pad">
-          <h2 class="section-title">Ρυθμίσεις γύρου</h2>
+          <h2 class="section-title">Βάση ερωτήσεων</h2>
           <div class="stack">
             <div>
-              <label for="timerSeconds">Δευτερόλεπτα ανά ερώτηση</label>
-              <input id="timerSeconds" type="number" min="5" max="300" value="30" />
-            </div>
-            <div>
-              <label for="categorySelect">Κατηγορία</label>
-              <select id="categorySelect"><option value="all">Όλες</option></select>
-            </div>
-            <div>
-              <label for="modeSelect">Λειτουργία επιλογής</label>
-              <select id="modeSelect">
-                <option value="random">Τυχαία ερώτηση</option>
-                <option value="sequence">Επόμενη στη σειρά</option>
-              </select>
-            </div>
-            <div class="inline-actions">
-              <button id="startRoundBtn" class="primary-btn" type="button">Νέος γύρος</button>
-              <button id="revealBtn" class="secondary-btn" type="button">Δείξε απάντηση</button>
-            </div>
-            <div class="inline-actions">
-              <button id="stopTimerBtn" class="secondary-btn" type="button">Σταμάτα timer</button>
-              <button id="nextQuestionBtn" class="danger-btn" type="button">Επόμενη ερώτηση</button>
-            </div>
-          </div>
-        </section>
-
-        <section class="panel card-pad">
-          <h2 class="section-title">Εισαγωγή JSON</h2>
-          <p class="muted">Πέρασε δικό σου array ερωτήσεων. Κάθε αντικείμενο θέλει <strong>category</strong>, <strong>question</strong>, <strong>answer</strong>.</p>
-          <div class="json-example">[
-  {
-    "category": "Τεχνολογία",
-    "question": "Πόσα MB ήταν ο πρώτος σκληρός δίσκος της IBM;",
-    "answer": "5 MB"
-  }
-]</div>
-          <div class="stack" style="margin-top: var(--space-4);">
-            <div>
-              <label for="jsonInput">Δικά σου δεδομένα</label>
-              <textarea id="jsonInput" placeholder='Επικόλλησε εδώ το JSON σου...'></textarea>
-            </div>
-            <div class="inline-actions">
-              <button id="importJsonBtn" class="primary-btn" type="button">Φόρτωσε JSON</button>
-              <button id="restoreDefaultBtn" class="secondary-btn" type="button">Επαναφορά default set</button>
-            </div>
-            <div id="importStatus" class="muted"></div>
-          </div>
-        </section>
-      </aside>
-
-      <section class="game-area">
-        <section class="panel card-pad">
-          <div class="status-grid">
-            <div class="status-box"><strong>Γύρος</strong><span id="roundCounter">0</span></div>
-            <div class="status-box"><strong>Χρόνος</strong><span id="timeDisplay">--</span></div>
-            <div class="status-box"><strong>Σύνολο ερωτήσεων</strong><span id="questionCount">0</span></div>
-          </div>
-        </section>
-
-        <section class="panel question-card">
-          <div class="question-top">
-            <div>
-              <div class="question-number" id="questionNumber">Πάτα «Νέος γύρος»</div>
-              <h2 class="question-text" id="questionText">Δεν έχει φορτωθεί ακόμα ερώτηση.</h2>
-            </div>
-            <div class="question-meta">
-              <span class="pill" id="categoryPill">Κατηγορία</span>
-              <span class="pill" id="modePill">host mode</span>
-            </div>
-          </div>
-
-          <div class="timer-wrap">
-            <div class="timer-bar"><div id="timerFill" class="timer-fill"></div></div>
-            <div class="muted" id="timerMessage">Το timer θα ξεκινήσει με τον επόμενο γύρο.</div>
-          </div>
-
-          <div class="round-note" id="roundNote">Μόλις ξεκινήσεις γύρο, το app θα επιλέξει ερώτηση, θα τρέξει timer και η απάντηση θα παραμείνει κρυφή μέχρι να την αποκαλύψεις.</div>
-
-          <div class="answer-box">
-            <span class="answer-label">Σωστή απάντηση</span>
-            <div id="answerValue" class="answer-value">—</div>
-          </div>
-
-          <div class="inline-actions">
-            <button id="toggleAnswerBtn" class="primary-btn" type="button">Δείξε / κρύψε απάντηση</button>
-            <button id="markRoundDoneBtn" class="secondary-btn" type="button">Κλείσε τον γύρο</button>
-          </div>
-        </section>
-
-        <section class="panel card-pad">
-          <h2 class="section-title">Όλες οι ερωτήσεις</h2>
-          <div class="stack">
-            <div>
-              <label for="searchInput">Αναζήτηση στη βάση</label>
+              <label for="searchInput">Αναζήτηση</label>
               <input id="searchInput" type="text" placeholder="π.χ. Ελλάδα, Marvel, καφές" />
             </div>
             <div id="questionsList" class="stack"></div>
           </div>
         </section>
       </section>
-    </section>
 
-    <p class="footer-note">Αν το θες ακόμα πιο σωστό, το επόμενο upgrade είναι αυτόματο input απαντήσεων παικτών και αυτόματος υπολογισμός closest score.</p>
+      <!-- ── TAB: Δημιουργία ───────────────────────── -->
+      <section class="tab-panel" id="panel-create" role="tabpanel">
+
+        <section class="panel card-pad">
+          <h2 class="section-title">Δημιουργία ερωτήσεων με AI</h2>
+          <p class="muted" style="margin:0 0 var(--space-4); font-size:var(--text-sm);">Επίλεξε κατηγορίες και πόσες ερωτήσεις θέλεις. Θα σου δώσουμε ένα έτοιμο prompt για να αντιγράψεις στο ChatGPT ή άλλο AI.</p>
+
+          <div class="stack">
+            <div>
+              <label>Κατηγορίες ερωτήσεων</label>
+              <div id="categoryCheckboxesContainer" class="category-checkboxes"></div>
+            </div>
+            <div style="max-width:200px;">
+              <label for="createQuestionCount">Αριθμός ερωτήσεων</label>
+              <input id="createQuestionCount" type="number" min="1" max="200" value="20" />
+            </div>
+            <div class="inline-actions">
+              <button id="generatePromptBtn" class="primary-btn" type="button">✨ Δημιουργία Prompt</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel card-pad" id="promptSection" style="display:none;">
+          <h2 class="section-title" style="margin-bottom:var(--space-3);">Το prompt σου</h2>
+          <p class="muted" style="margin:0 0 var(--space-3); font-size:var(--text-sm);">Αντίγραψε αυτό το κείμενο και επικόλλησέ το στο ChatGPT, Claude ή άλλο AI.</p>
+          <div class="stack">
+            <textarea id="promptOutput" class="prompt-output" readonly></textarea>
+            <div class="inline-actions">
+              <button id="copyPromptBtn" class="primary-btn" type="button">📋 Αντιγραφή prompt</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel card-pad">
+          <div class="section-divider">Φόρτωσε τις ερωτήσεις από το AI</div>
+          <div class="stack" style="margin-top:var(--space-4);">
+            <p class="muted" style="margin:0; font-size:var(--text-sm);">Αφού πάρεις το JSON από το AI, επικόλλησέ το παρακάτω. Το παιχνίδι θα χρησιμοποιεί <strong>μόνο</strong> αυτές τις ερωτήσεις.</p>
+            <div>
+              <label for="createJsonInput">JSON από AI</label>
+              <textarea id="createJsonInput" placeholder='Επικόλλησε εδώ το JSON...'></textarea>
+            </div>
+            <div class="inline-actions">
+              <button id="loadCreatedQuestionsBtn" class="primary-btn" type="button">⬆ Φόρτωσε ερωτήσεις</button>
+              <button id="restoreDefaultBtn" class="secondary-btn" type="button">↺ Επαναφορά default</button>
+            </div>
+            <div id="createImportStatus" class="muted" style="font-size:var(--text-sm);"></div>
+          </div>
+        </section>
+
+      </section>
+
+    </div>
+
+    <!-- ── Presenter overlay ──────────────────────── -->
+    <div class="presenter-overlay" id="presenterOverlay" aria-hidden="true" role="dialog" aria-label="Presenter Mode">
+      <div class="presenter-card">
+        <div class="presenter-question-number" id="presenterNumber">Ερώτηση</div>
+        <div class="presenter-question-text" id="presenterText">—</div>
+        <div class="presenter-category" id="presenterCategory">Κατηγορία</div>
+        <div class="presenter-timer-bar">
+          <div class="presenter-timer-fill" id="presenterTimerFill"></div>
+        </div>
+        <div class="presenter-answer-box">
+          <div class="presenter-answer-label">Σωστή Απάντηση</div>
+          <div class="presenter-answer-value" id="presenterAnswer">—</div>
+        </div>
+        <div class="presenter-hint">Space = απάντηση &nbsp;·&nbsp; N = επόμενο &nbsp;·&nbsp; F = πλήρης οθόνη &nbsp;·&nbsp; Esc = έξοδος</div>
+      </div>
+      <button class="presenter-exit-btn" id="presenterExitBtn" type="button">✕ Έξοδος</button>
+    </div>
+
   </main>
 
   <script src="questions.js"></script>
