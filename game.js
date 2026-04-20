@@ -25,6 +25,8 @@ const el = {
   revealBtn: document.getElementById('revealBtn'),
   stopTimerBtn: document.getElementById('stopTimerBtn'),
   nextQuestionBtn: document.getElementById('nextQuestionBtn'),
+  gameScoreboardPanel: document.getElementById('gameScoreboardPanel'),
+  gameScoreboard: document.getElementById('gameScoreboard'),
   // Status
   roundCounter: document.getElementById('roundCounter'),
   timeDisplay: document.getElementById('timeDisplay'),
@@ -70,7 +72,7 @@ const el = {
 };
 
 const html = document.documentElement;
-let theme = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+let theme = 'light';
 
 // ── Theme ─────────────────────────────────────────
 function applyTheme() {
@@ -108,6 +110,7 @@ function renderPlayers() {
   if (players.length === 0) {
     el.playersList.innerHTML = '<div class="muted" style="padding:var(--space-4) 0; font-size:var(--text-sm);">Δεν έχεις βάλει ακόμα παίκτες. Βάλε τουλάχιστον δύο για να έχει νόημα το σκορ.</div>';
     el.tabBadgePlayers.textContent = 0;
+    renderGameScoreboard();
     return;
   }
   const sorted = [...players].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, 'el'));
@@ -125,6 +128,27 @@ function renderPlayers() {
     </div>
   `).join('');
   el.tabBadgePlayers.textContent = players.length;
+  renderGameScoreboard();
+}
+
+function renderGameScoreboard() {
+  if (players.length === 0) {
+    el.gameScoreboardPanel.style.display = 'none';
+    return;
+  }
+  el.gameScoreboardPanel.style.display = '';
+  const sorted = [...players].sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, 'el'));
+  el.gameScoreboard.innerHTML = sorted.map((player, index) => `
+    <div class="game-score-item">
+      <span class="game-score-rank">${index + 1}.</span>
+      <span class="game-score-name">${player.name}</span>
+      <span class="game-score-badge">${player.score}</span>
+      <div class="game-score-actions">
+        <button class="mini-btn" type="button" data-player-action="plus" data-player-id="${player.id}">+1</button>
+        <button class="mini-btn" type="button" data-player-action="minus" data-player-id="${player.id}">-1</button>
+      </div>
+    </div>
+  `).join('');
 }
 
 function updateCounters() {
@@ -497,6 +521,14 @@ el.playersList.addEventListener('click', event => {
   if (playerAction === 'remove') removePlayer(playerId);
 });
 
+el.gameScoreboard.addEventListener('click', event => {
+  const button = event.target.closest('[data-player-action]');
+  if (!button) return;
+  const { playerAction, playerId } = button.dataset;
+  if (playerAction === 'plus') adjustPlayerScore(playerId, 1);
+  if (playerAction === 'minus') adjustPlayerScore(playerId, -1);
+});
+
 el.presenterLaunchBtn.addEventListener('click', enterPresenterMode);
 el.presenterExitBtn.addEventListener('click', exitPresenterMode);
 
@@ -511,6 +543,7 @@ populateCategories();
 populateCreatorCategories();
 updateCounters();
 renderPlayers();
+renderGameScoreboard();
 renderQuestionBank();
 loadQuestion(null);
 updateTimerUI();
