@@ -15,6 +15,7 @@ const el = {
   playerName: document.getElementById('playerName'),
   addPlayerBtn: document.getElementById('addPlayerBtn'),
   resetScoresBtn: document.getElementById('resetScoresBtn'),
+  newGameBtn: document.getElementById('newGameBtn'),
   tabBadgePlayers: document.getElementById('tabBadgePlayers'),
   // Game settings
   timerSeconds: document.getElementById('timerSeconds'),
@@ -265,6 +266,7 @@ function startRound() {
   round += 1;
   updateCounters();
   startTimer(duration);
+  saveSession();
 }
 
 function toggleAnswer() {
@@ -283,19 +285,23 @@ function addPlayer() {
   players.push({ id: crypto.randomUUID(), name, score: 0 });
   el.playerName.value = '';
   renderPlayers();
+  saveSession();
 }
 
 function adjustPlayerScore(id, delta) {
   players = players.map(player => player.id === id ? { ...player, score: Math.max(0, player.score + delta) } : player);
   renderPlayers();
+  saveSession();
 }
 
 function removePlayer(id) {
   players = players.filter(player => player.id !== id);
   renderPlayers();
+  saveSession();
 }
 
 function resetScores() {
+  clearSession();
   players = players.map(player => ({ ...player, score: 0 }));
   renderPlayers();
 }
@@ -329,6 +335,7 @@ function validateImportedQuestions(data) {
 }
 
 function restoreDefaults() {
+  clearSession();
   questions = [...defaultQuestions];
   usedQuestionIndexes = [];
   sequencePointer = 0;
@@ -341,6 +348,87 @@ function restoreDefaults() {
   renderQuestionBank();
   loadQuestion(null);
   el.createImportStatus.textContent = 'Έγινε επαναφορά στο default σετ (50 ερωτήσεις).';
+}
+
+// ── Session ───────────────────────────────────────
+const SESSION_KEY = 'quizGameSession';
+
+function saveSession() {
+  const isCustom = questions !== defaultQuestions;
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({
+      players,
+      round,
+      usedQuestionIndexes,
+      sequencePointer,
+      isCustomQuestions: isCustom,
+      customQuestions: isCustom ? questions : null
+    }));
+  } catch (e) { /* quota/security — δεν κρασάρει το παιχνίδι */ }
+}
+
+function loadSession() {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    if (!raw) return false;
+    const p = JSON.parse(raw);
+    if (!Array.isArray(p.players)) return false;
+    for (const pl of p.players) {
+      if (typeof pl.id !== 'string' || typeof pl.name !== 'string' || !pl.name.trim()) return false;
+      pl.score = Math.max(0, Number(pl.score) || 0);
+    }
+    if (typeof p.round !== 'number' || p.round < 0) return false;
+    if (!Array.isArray(p.usedQuestionIndexes)) return false;
+    if (typeof p.sequencePointer !== 'number') return false;
+    if (p.isCustomQuestions) {
+      if (!Array.isArray(p.customQuestions)) return false;
+      validateImportedQuestions(p.customQuestions);
+      questions = p.customQuestions;
+    }
+    if (p.usedQuestionIndexes.some(i => i >= questions.length)) {
+      p.usedQuestionIndexes = [];
+      p.sequencePointer = 0;
+    }
+    players = p.players;
+    round = p.round;
+    usedQuestionIndexes = p.usedQuestionIndexes;
+    sequencePointer = p.sequencePointer;
+    return true;
+  } catch (e) {
+    sessionStorage.removeItem(SESSION_KEY);
+    return false;
+  }
+}
+
+function clearSession() {
+  sessionStorage.removeItem(SESSION_KEY);
+}
+
+function showSessionBanner(playerCount, roundNumber) {
+  const banner = document.createElement('div');
+  banner.id = 'sessionRestoreBanner';
+  banner.setAttribute('role', 'status');
+  banner.innerHTML = `<span>Η συνεδρία αποκαταστάθηκε — ${playerCount} παίκτες, γύρος ${roundNumber}.</span><button type="button" id="sessionBannerClose" aria-label="Κλείσιμο">✕</button>`;
+  banner.style.cssText = 'position:fixed;bottom:var(--space-4,1rem);left:50%;transform:translateX(-50%);z-index:9000;display:flex;align-items:center;gap:var(--space-3,.75rem);padding:.75rem 1rem;border-radius:var(--radius-lg,1rem);background:var(--color-primary);color:white;font-size:var(--text-sm,.875rem);font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.18);animation:tabFadeIn 200ms ease;max-width:calc(100vw - 2rem);';
+  document.body.appendChild(banner);
+  document.getElementById('sessionBannerClose').addEventListener('click', () => banner.remove());
+  setTimeout(() => { if (banner.isConnected) banner.remove(); }, 5000);
+}
+
+function newGame() {
+  if (!confirm('Ξεκίνα νέο παιχνίδι; Θα χαθεί το τρέχον σκορ.')) return;
+  players = [];
+  round = 0;
+  usedQuestionIndexes = [];
+  sequencePointer = 0;
+  currentQuestionIndex = null;
+  stopTimer();
+  clearSession();
+  renderPlayers();
+  renderGameScoreboard();
+  updateCounters();
+  loadQuestion(null);
+  updateTimerUI();
 }
 
 // ── Presenter mode ────────────────────────────────
@@ -485,6 +573,7 @@ function loadCreatedQuestions() {
     renderQuestionBank();
     loadQuestion(null);
     el.createImportStatus.textContent = `✓ Φορτώθηκαν ${questions.length} ερωτήσεις. Πήγαινε στην καρτέλα Παιχνίδι!`;
+    saveSession();
   } catch (error) {
     el.createImportStatus.textContent = `Σφάλμα JSON: ${error.message}`;
   }
@@ -503,6 +592,7 @@ el.tabTriggers.forEach(btn => {
 el.addPlayerBtn.addEventListener('click', addPlayer);
 el.playerName.addEventListener('keydown', event => { if (event.key === 'Enter') addPlayer(); });
 el.resetScoresBtn.addEventListener('click', resetScores);
+el.newGameBtn.addEventListener('click', newGame);
 
 el.startRoundBtn.addEventListener('click', startRound);
 el.nextQuestionBtn.addEventListener('click', startRound);
@@ -539,6 +629,7 @@ el.restoreDefaultBtn.addEventListener('click', restoreDefaults);
 
 // ── Init ──────────────────────────────────────────
 applyTheme();
+const sessionRestored = loadSession();
 populateCategories();
 populateCreatorCategories();
 updateCounters();
@@ -548,3 +639,4 @@ renderQuestionBank();
 loadQuestion(null);
 updateTimerUI();
 switchTab('game');
+if (sessionRestored) showSessionBanner(players.length, round);
