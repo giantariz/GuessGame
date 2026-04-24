@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Closest Quiz Game Pro</title>
-  <link rel="preconnect" href="https://api.fontshare.com" />
-  <link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&f[]=boska@500,700&display=swap" rel="stylesheet" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;700&family=Noto+Serif:wght@500;700&display=swap" rel="stylesheet" />
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -24,6 +25,7 @@
 
     <nav class="tab-nav" role="tablist" aria-label="Ενότητες παιχνιδιού">
       <button class="tab-btn tab-btn--active" type="button" data-tab-trigger="game" role="tab" aria-selected="true" aria-controls="panel-game">⚡ Παιχνίδι</button>
+      <button class="tab-btn" type="button" data-tab-trigger="instructions" role="tab" aria-selected="false" aria-controls="panel-instructions">📖 Οδηγίες</button>
       <button class="tab-btn" type="button" data-tab-trigger="players" role="tab" aria-selected="false" aria-controls="panel-players">👥 Παίκτες <span id="tabBadgePlayers" class="tab-badge">0</span></button>
       <button class="tab-btn" type="button" data-tab-trigger="questions" role="tab" aria-selected="false" aria-controls="panel-questions">📋 Ερωτήσεις</button>
       <button class="tab-btn" type="button" data-tab-trigger="create" role="tab" aria-selected="false" aria-controls="panel-create">✨ Δημιουργία</button>
@@ -37,7 +39,6 @@
         <section class="panel card-pad">
           <div class="status-grid">
             <div class="status-box"><strong>Ερώτηση</strong><span id="roundCounter">0</span></div>
-            <div class="status-box"><strong>Χρόνος</strong><span id="timeDisplay">--</span></div>
             <div class="status-box"><strong>Σύνολο</strong><span id="questionCount">0</span></div>
           </div>
         </section>
@@ -56,7 +57,6 @@
 
           <div class="timer-wrap">
             <div class="timer-bar"><div id="timerFill" class="timer-fill"></div></div>
-            <div class="muted" id="timerMessage" style="font-size:var(--text-sm);">Το timer θα ξεκινήσει με την επόμενη ερώτηση.</div>
           </div>
 
           <div class="answer-box">
@@ -64,13 +64,10 @@
             <div id="answerValue" class="answer-value">—</div>
           </div>
 
-          <div class="round-note" id="roundNote">Ξεκίνα μία ερώτηση, τρέχει ο timer, οι παίκτες γράφουν απαντήσεις offline, μετά αποκαλύπτεις τη σωστή και δίνεις πόντο από την καρτέλα Παίκτες.</div>
-
           <div class="game-controls">
-            <button id="startRoundBtn" class="primary-btn" type="button">🎯 Νέα ερώτηση</button>
-            <button id="revealBtn" class="secondary-btn" type="button">👁 Δείξε / κρύψε</button>
-            <button id="stopTimerBtn" class="secondary-btn" type="button">⏹ Σταμάτα timer</button>
-            <button id="nextQuestionBtn" class="danger-btn" type="button">⏭ Παράλειψη</button>
+            <button id="startRoundBtn" class="primary-btn start-btn" type="button">🎲 Ας παίξουμε!</button>
+            <button id="revealBtn" class="primary-btn" type="button" style="display:none;">👁 Δείξε την απάντηση</button>
+            <button id="nextQuestionBtn" class="secondary-btn" type="button" style="display:none;">⏭ Επόμενη ερώτηση</button>
           </div>
         </section>
 
@@ -145,7 +142,7 @@
 
         <section class="panel card-pad">
           <h2 class="section-title">Δημιουργία ερωτήσεων με AI</h2>
-          <p class="muted" style="margin:0 0 var(--space-4); font-size:var(--text-sm);">Επίλεξε κατηγορίες και πόσες ερωτήσεις θέλεις. Θα σου δώσουμε ένα έτοιμο prompt για να αντιγράψεις στο ChatGPT ή άλλο AI.</p>
+          <p class="muted" style="margin:0 0 var(--space-4); font-size:var(--text-sm);">Επίλεξε κατηγορίες και πόσες ερωτήσεις θέλεις. Θα σου δώσουμε ένα έτοιμο prompt για να αντιγράψεις σε ένα AI tool. Συνιστούμε το <strong>Perplexity</strong> για πιο σωστά και ακριβή αποτελέσματα.</p>
 
           <div class="stack">
             <div>
@@ -164,7 +161,7 @@
 
         <section class="panel card-pad" id="promptSection" style="display:none;">
           <h2 class="section-title" style="margin-bottom:var(--space-3);">Το prompt σου</h2>
-          <p class="muted" style="margin:0 0 var(--space-3); font-size:var(--text-sm);">Αντίγραψε αυτό το κείμενο και επικόλλησέ το στο ChatGPT, Claude ή άλλο AI.</p>
+          <p class="muted" style="margin:0 0 var(--space-3); font-size:var(--text-sm);">Αντίγραψε αυτό το κείμενο και επικόλλησέ το σε ένα AI tool (π.χ. Perplexity, ChatGPT).</p>
           <div class="stack">
             <textarea id="promptOutput" class="prompt-output" readonly></textarea>
             <div class="inline-actions">
@@ -189,6 +186,45 @@
           </div>
         </section>
 
+      </section>
+
+      <!-- ── TAB: Οδηγίες ─────────────────────────────── -->
+      <section class="tab-panel" id="panel-instructions" role="tabpanel">
+        <section class="panel card-pad">
+          <h2 class="section-title">Πώς παίζεται</h2>
+          <div class="instructions-content">
+            <p style="margin:0;">Το <strong>Closest Quiz</strong> είναι παιχνίδι εκτίμησης αριθμών. Όλοι οι παίκτες μαντεύουν έναν αριθμό και κερδίζει πόντο αυτός που <strong>πλησιάζει περισσότερο</strong> στη σωστή απάντηση.</p>
+
+            <div>
+              <h3 class="instructions-heading">Βήμα προς βήμα</h3>
+              <ol class="instructions-list">
+                <li>Πήγαινε στην καρτέλα <strong>Παίκτες</strong> και πρόσθεσε τα ονόματα όλων των παικτών.</li>
+                <li>Γύρνα στο <strong>Παιχνίδι</strong> και πάτα <strong>«Ας παίξουμε!»</strong>.</li>
+                <li>Διάβασε δυνατά την ερώτηση. Κάθε παίκτης γράφει την εκτίμησή του σε χαρτί — χωρίς να δείχνει στους άλλους!</li>
+                <li>Όλοι αποκαλύπτουν τις απαντήσεις τους ταυτόχρονα.</li>
+                <li>Πάτα <strong>«Δείξε την απάντηση»</strong> για να δεις τη σωστή απάντηση.</li>
+                <li>Ο παίκτης που ήταν πιο κοντά παίρνει <strong>+1 πόντο</strong> — δώσε τον από την καρτέλα <strong>Παίκτες</strong>.</li>
+                <li>Πάτα <strong>«Επόμενη ερώτηση»</strong> και συνέχισε!</li>
+              </ol>
+            </div>
+
+            <div>
+              <h3 class="instructions-heading">Πώς δημιουργείς νέες ερωτήσεις</h3>
+              <p style="margin:0 0 var(--space-3);">Πήγαινε στην καρτέλα <strong>Δημιουργία</strong> για να φτιάξεις το δικό σου σετ ερωτήσεων με τη βοήθεια AI:</p>
+              <ol class="instructions-list">
+                <li>Επίλεξε τις κατηγορίες που θέλεις και τον αριθμό ερωτήσεων.</li>
+                <li>Πάτα <strong>«Δημιουργία Prompt»</strong> και αντέγραψε το κείμενο.</li>
+                <li>Επικόλλησέ το σε ένα AI tool της επιλογής σου.</li>
+                <li>Αντίγραψε το JSON που θα σου δώσει και επικόλλησέ το στο πεδίο <strong>«JSON από AI»</strong>.</li>
+                <li>Πάτα <strong>«Φόρτωσε ερωτήσεις»</strong> — το παιχνίδι είναι έτοιμο!</li>
+              </ol>
+            </div>
+
+            <div class="instructions-tip">
+              <strong>💡 Συμβουλή:</strong> Χρησιμοποίησε το <strong>Perplexity</strong> για να δημιουργήσεις ερωτήσεις — θα δώσει πιο σωστά και ακριβή αποτελέσματα σε σχέση με άλλα AI tools!
+            </div>
+          </div>
+        </section>
       </section>
 
     </div>

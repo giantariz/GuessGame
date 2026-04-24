@@ -24,13 +24,11 @@ const el = {
   // Game controls
   startRoundBtn: document.getElementById('startRoundBtn'),
   revealBtn: document.getElementById('revealBtn'),
-  stopTimerBtn: document.getElementById('stopTimerBtn'),
   nextQuestionBtn: document.getElementById('nextQuestionBtn'),
   gameScoreboardPanel: document.getElementById('gameScoreboardPanel'),
   gameScoreboard: document.getElementById('gameScoreboard'),
   // Status
   roundCounter: document.getElementById('roundCounter'),
-  timeDisplay: document.getElementById('timeDisplay'),
   questionCount: document.getElementById('questionCount'),
   // Question card
   questionNumber: document.getElementById('questionNumber'),
@@ -38,10 +36,7 @@ const el = {
   categoryPill: document.getElementById('categoryPill'),
   modePill: document.getElementById('modePill'),
   timerFill: document.getElementById('timerFill'),
-  timerMessage: document.getElementById('timerMessage'),
-  roundNote: document.getElementById('roundNote'),
   answerValue: document.getElementById('answerValue'),
-  toggleAnswerBtn: document.getElementById('toggleAnswerBtn'),
   // Questions tab
   searchInput: document.getElementById('searchInput'),
   questionsList: document.getElementById('questionsList'),
@@ -167,19 +162,9 @@ function stopTimer() {
 }
 
 function updateTimerUI() {
-  el.timeDisplay.textContent = currentQuestionIndex === null ? '--' : `${timeLeft}s`;
   const width = currentDuration > 0 ? Math.max(0, (timeLeft / currentDuration) * 100) : 0;
   const widthStr = `${width}%`;
   el.timerFill.style.width = widthStr;
-  if (currentQuestionIndex === null) {
-    el.timerMessage.textContent = 'Το timer θα ξεκινήσει με την επόμενη ερώτηση.';
-  } else if (timeLeft > 10) {
-    el.timerMessage.textContent = 'Ο γύρος τρέχει κανονικά.';
-  } else if (timeLeft > 0) {
-    el.timerMessage.textContent = 'Τελευταία δευτερόλεπτα — κλείσε απαντήσεις.';
-  } else {
-    el.timerMessage.textContent = 'Ο χρόνος έληξε. Τώρα δείξε τη σωστή απάντηση και δώσε πόντο.';
-  }
   if (presenterActive) {
     el.presenterTimerFill.style.width = widthStr;
   }
@@ -231,15 +216,23 @@ function pickNextQuestionIndex() {
   return randomIndex;
 }
 
+function updateGameControlsVisibility() {
+  const hasQuestion = currentQuestionIndex !== null;
+  el.startRoundBtn.style.display = hasQuestion ? 'none' : '';
+  el.nextQuestionBtn.style.display = hasQuestion ? '' : 'none';
+  el.revealBtn.style.display = (hasQuestion && !answerRevealed) ? '' : 'none';
+}
+
 function loadQuestion(index) {
   if (index === null || !questions[index]) {
-    el.questionNumber.textContent = 'Πάτα «Νέα ερώτηση» για να ξεκινήσεις';
+    el.questionNumber.textContent = 'Πάτα «Ας παίξουμε!» για να ξεκινήσεις';
     el.questionText.textContent = 'Δεν έχει φορτωθεί ακόμα ερώτηση.';
     el.categoryPill.textContent = '—';
     el.answerValue.textContent = '—';
     el.answerValue.classList.remove('revealed');
     currentQuestionIndex = null;
     updateTimerUI();
+    updateGameControlsVisibility();
     return;
   }
   const item = questions[index];
@@ -250,7 +243,7 @@ function loadQuestion(index) {
   el.categoryPill.textContent = item.category;
   el.answerValue.textContent = item.answer;
   el.answerValue.classList.remove('revealed');
-  el.roundNote.textContent = 'Οι παίκτες γράφουν τώρα απάντηση. Όταν τελειώσει ο χρόνος, πατάς «Δείξε / κρύψε» και μετά απονέμεις πόντο από την καρτέλα Παίκτες.';
+  updateGameControlsVisibility();
   if (presenterActive) syncPresenterCard();
 }
 
@@ -269,12 +262,14 @@ function startRound() {
   saveSession();
 }
 
-function toggleAnswer() {
-  if (currentQuestionIndex === null) return;
-  answerRevealed = !answerRevealed;
-  el.answerValue.classList.toggle('revealed', answerRevealed);
+function revealAnswer() {
+  if (currentQuestionIndex === null || answerRevealed) return;
+  answerRevealed = true;
+  stopTimer();
+  el.answerValue.classList.add('revealed');
+  updateGameControlsVisibility();
   if (presenterActive) {
-    el.presenterAnswer.classList.toggle('revealed', answerRevealed);
+    el.presenterAnswer.classList.add('revealed');
   }
 }
 
@@ -464,7 +459,7 @@ document.addEventListener('keydown', event => {
   switch (event.key) {
     case ' ':
       event.preventDefault();
-      toggleAnswer();
+      revealAnswer();
       break;
     case 'n':
     case 'N':
@@ -596,8 +591,7 @@ el.newGameBtn.addEventListener('click', newGame);
 
 el.startRoundBtn.addEventListener('click', startRound);
 el.nextQuestionBtn.addEventListener('click', startRound);
-el.revealBtn.addEventListener('click', toggleAnswer);
-el.stopTimerBtn.addEventListener('click', stopTimer);
+el.revealBtn.addEventListener('click', revealAnswer);
 
 el.searchInput.addEventListener('input', renderQuestionBank);
 el.modeSelect.addEventListener('change', updateCounters);
