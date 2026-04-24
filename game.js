@@ -51,15 +51,7 @@ const el = {
   promptOutput: document.getElementById('promptOutput'),
   copyPromptBtn: document.getElementById('copyPromptBtn'),
   promptSection: document.getElementById('promptSection'),
-  // Presenter
-  presenterOverlay: document.getElementById('presenterOverlay'),
-  presenterExitBtn: document.getElementById('presenterExitBtn'),
-  presenterNumber: document.getElementById('presenterNumber'),
-  presenterText: document.getElementById('presenterText'),
-  presenterCategory: document.getElementById('presenterCategory'),
-  presenterTimerFill: document.getElementById('presenterTimerFill'),
-  presenterAnswer: document.getElementById('presenterAnswer'),
-  presenterLaunchBtn: document.getElementById('presenterLaunchBtn'),
+  newGameInlineBtn: document.getElementById('newGameInlineBtn'),
   // Tabs
   tabTriggers: document.querySelectorAll('[data-tab-trigger]'),
   tabPanels: document.querySelectorAll('.tab-panel'),
@@ -163,11 +155,7 @@ function stopTimer() {
 
 function updateTimerUI() {
   const width = currentDuration > 0 ? Math.max(0, (timeLeft / currentDuration) * 100) : 0;
-  const widthStr = `${width}%`;
-  el.timerFill.style.width = widthStr;
-  if (presenterActive) {
-    el.presenterTimerFill.style.width = widthStr;
-  }
+  el.timerFill.style.width = `${width}%`;
 }
 
 function startTimer(duration) {
@@ -244,7 +232,6 @@ function loadQuestion(index) {
   el.answerValue.textContent = item.answer;
   el.answerValue.classList.remove('revealed');
   updateGameControlsVisibility();
-  if (presenterActive) syncPresenterCard();
 }
 
 function startRound() {
@@ -268,9 +255,6 @@ function revealAnswer() {
   stopTimer();
   el.answerValue.classList.add('revealed');
   updateGameControlsVisibility();
-  if (presenterActive) {
-    el.presenterAnswer.classList.add('revealed');
-  }
 }
 
 // ── Players ───────────────────────────────────────
@@ -426,62 +410,6 @@ function newGame() {
   updateTimerUI();
 }
 
-// ── Presenter mode ────────────────────────────────
-let presenterActive = false;
-
-function syncPresenterCard() {
-  el.presenterNumber.textContent = el.questionNumber.textContent;
-  el.presenterText.textContent = el.questionText.textContent;
-  el.presenterCategory.textContent = el.categoryPill.textContent;
-  el.presenterAnswer.textContent = el.answerValue.textContent;
-  el.presenterAnswer.classList.toggle('revealed', answerRevealed);
-  const width = currentDuration > 0 ? Math.max(0, (timeLeft / currentDuration) * 100) : 0;
-  el.presenterTimerFill.style.width = `${width}%`;
-}
-
-function enterPresenterMode() {
-  presenterActive = true;
-  syncPresenterCard();
-  el.presenterOverlay.classList.add('presenter-overlay--active');
-  el.presenterOverlay.setAttribute('aria-hidden', 'false');
-  document.body.style.overflow = 'hidden';
-}
-
-function exitPresenterMode() {
-  presenterActive = false;
-  el.presenterOverlay.classList.remove('presenter-overlay--active');
-  el.presenterOverlay.setAttribute('aria-hidden', 'true');
-  document.body.style.overflow = '';
-}
-
-document.addEventListener('keydown', event => {
-  if (!presenterActive) return;
-  switch (event.key) {
-    case ' ':
-      event.preventDefault();
-      revealAnswer();
-      break;
-    case 'n':
-    case 'N':
-      event.preventDefault();
-      startRound();
-      break;
-    case 'f':
-    case 'F':
-      event.preventDefault();
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        document.exitFullscreen().catch(() => {});
-      }
-      break;
-    case 'Escape':
-      exitPresenterMode();
-      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-      break;
-  }
-});
-
 // ── Question creator ──────────────────────────────
 function populateCreatorCategories() {
   const categories = [...new Set(questions.map(q => q.category))].sort((a, b) => a.localeCompare(b, 'el'));
@@ -613,8 +541,7 @@ el.gameScoreboard.addEventListener('click', event => {
   if (playerAction === 'minus') adjustPlayerScore(playerId, -1);
 });
 
-el.presenterLaunchBtn.addEventListener('click', enterPresenterMode);
-el.presenterExitBtn.addEventListener('click', exitPresenterMode);
+el.newGameInlineBtn.addEventListener('click', newGame);
 
 el.generatePromptBtn.addEventListener('click', generateAIPrompt);
 el.copyPromptBtn.addEventListener('click', copyPrompt);

@@ -17,7 +17,7 @@
         <div class="logo-mark">≈</div>
         <div>
           <div>Closest Quiz Game Pro</div>
-          <div style="font-size: var(--text-xs); color: var(--color-text-muted);">scoreboard · timer · presenter mode · AI questions</div>
+          <div style="font-size: var(--text-xs); color: var(--color-text-muted);">Κερδίζει ο «λιγότερο λάθος».</div>
         </div>
       </div>
       <button class="theme-toggle" type="button" data-theme-toggle aria-label="Αλλαγή θέματος">🌙</button>
@@ -39,7 +39,7 @@
         <section class="panel card-pad">
           <div class="status-grid">
             <div class="status-box"><strong>Ερώτηση</strong><span id="roundCounter">0</span></div>
-            <div class="status-box"><strong>Σύνολο</strong><span id="questionCount">0</span></div>
+            <div class="status-box"><strong>Σύνολο ερωτήσεων</strong><span id="questionCount">0</span></div>
           </div>
         </section>
 
@@ -71,6 +71,11 @@
           </div>
         </section>
 
+        <section class="panel card-pad" id="gameScoreboardPanel" style="display:none;">
+          <h2 class="section-title" style="margin-bottom:var(--space-3);">Σκορ παικτών</h2>
+          <div id="gameScoreboard" class="game-scoreboard"></div>
+        </section>
+
         <section class="panel card-pad">
           <h2 class="section-title" style="margin-bottom:var(--space-3);">Ρυθμίσεις</h2>
           <div class="game-settings">
@@ -91,15 +96,8 @@
             </div>
           </div>
           <div style="margin-top:var(--space-4);">
-            <button id="presenterLaunchBtn" class="presenter-launch-btn" type="button">
-              🖥 Presenter Mode
-            </button>
+            <button id="newGameInlineBtn" class="danger-btn" type="button">🗑 Νέο παιχνίδι</button>
           </div>
-        </section>
-
-        <section class="panel card-pad" id="gameScoreboardPanel" style="display:none;">
-          <h2 class="section-title" style="margin-bottom:var(--space-3);">Σκορ παικτών</h2>
-          <div id="gameScoreboard" class="game-scoreboard"></div>
         </section>
 
       </section>
@@ -203,7 +201,7 @@
                 <li>Διάβασε δυνατά την ερώτηση. Κάθε παίκτης γράφει την εκτίμησή του σε χαρτί — χωρίς να δείχνει στους άλλους!</li>
                 <li>Όλοι αποκαλύπτουν τις απαντήσεις τους ταυτόχρονα.</li>
                 <li>Πάτα <strong>«Δείξε την απάντηση»</strong> για να δεις τη σωστή απάντηση.</li>
-                <li>Ο παίκτης που ήταν πιο κοντά παίρνει <strong>+1 πόντο</strong> — δώσε τον από την καρτέλα <strong>Παίκτες</strong>.</li>
+                <li>Ο παίκτης που ήταν πιο κοντά παίρνει <strong>+1 πόντο</strong> — δώσε τον απευθείας από τη βαθμολογία που εμφανίζεται κάτω από την ερώτηση.</li>
                 <li>Πάτα <strong>«Επόμενη ερώτηση»</strong> και συνέχισε!</li>
               </ol>
             </div>
@@ -227,24 +225,6 @@
         </section>
       </section>
 
-    </div>
-
-    <!-- ── Presenter overlay ──────────────────────── -->
-    <div class="presenter-overlay" id="presenterOverlay" aria-hidden="true" role="dialog" aria-label="Presenter Mode">
-      <div class="presenter-card">
-        <div class="presenter-question-number" id="presenterNumber">Ερώτηση</div>
-        <div class="presenter-question-text" id="presenterText">—</div>
-        <div class="presenter-category" id="presenterCategory">Κατηγορία</div>
-        <div class="presenter-timer-bar">
-          <div class="presenter-timer-fill" id="presenterTimerFill"></div>
-        </div>
-        <div class="presenter-answer-box">
-          <div class="presenter-answer-label">Σωστή Απάντηση</div>
-          <div class="presenter-answer-value" id="presenterAnswer">—</div>
-        </div>
-        <div class="presenter-hint">Space = απάντηση &nbsp;·&nbsp; N = επόμενο &nbsp;·&nbsp; F = πλήρης οθόνη &nbsp;·&nbsp; Esc = έξοδος</div>
-      </div>
-      <button class="presenter-exit-btn" id="presenterExitBtn" type="button">✕ Έξοδος</button>
     </div>
 
   </main>
