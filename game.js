@@ -24,13 +24,11 @@ const el = {
   // Game controls
   startRoundBtn: document.getElementById('startRoundBtn'),
   revealBtn: document.getElementById('revealBtn'),
-  stopTimerBtn: document.getElementById('stopTimerBtn'),
   nextQuestionBtn: document.getElementById('nextQuestionBtn'),
   gameScoreboardPanel: document.getElementById('gameScoreboardPanel'),
   gameScoreboard: document.getElementById('gameScoreboard'),
   // Status
   roundCounter: document.getElementById('roundCounter'),
-  timeDisplay: document.getElementById('timeDisplay'),
   questionCount: document.getElementById('questionCount'),
   // Question card
   questionNumber: document.getElementById('questionNumber'),
@@ -38,10 +36,7 @@ const el = {
   categoryPill: document.getElementById('categoryPill'),
   modePill: document.getElementById('modePill'),
   timerFill: document.getElementById('timerFill'),
-  timerMessage: document.getElementById('timerMessage'),
-  roundNote: document.getElementById('roundNote'),
   answerValue: document.getElementById('answerValue'),
-  toggleAnswerBtn: document.getElementById('toggleAnswerBtn'),
   // Questions tab
   searchInput: document.getElementById('searchInput'),
   questionsList: document.getElementById('questionsList'),
@@ -56,15 +51,7 @@ const el = {
   promptOutput: document.getElementById('promptOutput'),
   copyPromptBtn: document.getElementById('copyPromptBtn'),
   promptSection: document.getElementById('promptSection'),
-  // Presenter
-  presenterOverlay: document.getElementById('presenterOverlay'),
-  presenterExitBtn: document.getElementById('presenterExitBtn'),
-  presenterNumber: document.getElementById('presenterNumber'),
-  presenterText: document.getElementById('presenterText'),
-  presenterCategory: document.getElementById('presenterCategory'),
-  presenterTimerFill: document.getElementById('presenterTimerFill'),
-  presenterAnswer: document.getElementById('presenterAnswer'),
-  presenterLaunchBtn: document.getElementById('presenterLaunchBtn'),
+  newGameInlineBtn: document.getElementById('newGameInlineBtn'),
   // Tabs
   tabTriggers: document.querySelectorAll('[data-tab-trigger]'),
   tabPanels: document.querySelectorAll('.tab-panel'),
@@ -167,22 +154,8 @@ function stopTimer() {
 }
 
 function updateTimerUI() {
-  el.timeDisplay.textContent = currentQuestionIndex === null ? '--' : `${timeLeft}s`;
   const width = currentDuration > 0 ? Math.max(0, (timeLeft / currentDuration) * 100) : 0;
-  const widthStr = `${width}%`;
-  el.timerFill.style.width = widthStr;
-  if (currentQuestionIndex === null) {
-    el.timerMessage.textContent = 'Το timer θα ξεκινήσει με την επόμενη ερώτηση.';
-  } else if (timeLeft > 10) {
-    el.timerMessage.textContent = 'Ο γύρος τρέχει κανονικά.';
-  } else if (timeLeft > 0) {
-    el.timerMessage.textContent = 'Τελευταία δευτερόλεπτα — κλείσε απαντήσεις.';
-  } else {
-    el.timerMessage.textContent = 'Ο χρόνος έληξε. Τώρα δείξε τη σωστή απάντηση και δώσε πόντο.';
-  }
-  if (presenterActive) {
-    el.presenterTimerFill.style.width = widthStr;
-  }
+  el.timerFill.style.width = `${width}%`;
 }
 
 function startTimer(duration) {
@@ -231,15 +204,23 @@ function pickNextQuestionIndex() {
   return randomIndex;
 }
 
+function updateGameControlsVisibility() {
+  const hasQuestion = currentQuestionIndex !== null;
+  el.startRoundBtn.style.display = hasQuestion ? 'none' : '';
+  el.nextQuestionBtn.style.display = hasQuestion ? '' : 'none';
+  el.revealBtn.style.display = (hasQuestion && !answerRevealed) ? '' : 'none';
+}
+
 function loadQuestion(index) {
   if (index === null || !questions[index]) {
-    el.questionNumber.textContent = 'Πάτα «Νέα ερώτηση» για να ξεκινήσεις';
+    el.questionNumber.textContent = 'Πάτα «Ας παίξουμε!» για να ξεκινήσεις';
     el.questionText.textContent = 'Δεν έχει φορτωθεί ακόμα ερώτηση.';
     el.categoryPill.textContent = '—';
     el.answerValue.textContent = '—';
     el.answerValue.classList.remove('revealed');
     currentQuestionIndex = null;
     updateTimerUI();
+    updateGameControlsVisibility();
     return;
   }
   const item = questions[index];
@@ -250,8 +231,7 @@ function loadQuestion(index) {
   el.categoryPill.textContent = item.category;
   el.answerValue.textContent = item.answer;
   el.answerValue.classList.remove('revealed');
-  el.roundNote.textContent = 'Οι παίκτες γράφουν τώρα απάντηση. Όταν τελειώσει ο χρόνος, πατάς «Δείξε / κρύψε» και μετά απονέμεις πόντο από την καρτέλα Παίκτες.';
-  if (presenterActive) syncPresenterCard();
+  updateGameControlsVisibility();
 }
 
 function startRound() {
@@ -269,13 +249,12 @@ function startRound() {
   saveSession();
 }
 
-function toggleAnswer() {
-  if (currentQuestionIndex === null) return;
-  answerRevealed = !answerRevealed;
-  el.answerValue.classList.toggle('revealed', answerRevealed);
-  if (presenterActive) {
-    el.presenterAnswer.classList.toggle('revealed', answerRevealed);
-  }
+function revealAnswer() {
+  if (currentQuestionIndex === null || answerRevealed) return;
+  answerRevealed = true;
+  stopTimer();
+  el.answerValue.classList.add('revealed');
+  updateGameControlsVisibility();
 }
 
 // ── Players ───────────────────────────────────────
@@ -431,62 +410,6 @@ function newGame() {
   updateTimerUI();
 }
 
-// ── Presenter mode ────────────────────────────────
-let presenterActive = false;
-
-function syncPresenterCard() {
-  el.presenterNumber.textContent = el.questionNumber.textContent;
-  el.presenterText.textContent = el.questionText.textContent;
-  el.presenterCategory.textContent = el.categoryPill.textContent;
-  el.presenterAnswer.textContent = el.answerValue.textContent;
-  el.presenterAnswer.classList.toggle('revealed', answerRevealed);
-  const width = currentDuration > 0 ? Math.max(0, (timeLeft / currentDuration) * 100) : 0;
-  el.presenterTimerFill.style.width = `${width}%`;
-}
-
-function enterPresenterMode() {
-  presenterActive = true;
-  syncPresenterCard();
-  el.presenterOverlay.classList.add('presenter-overlay--active');
-  el.presenterOverlay.setAttribute('aria-hidden', 'false');
-  document.body.style.overflow = 'hidden';
-}
-
-function exitPresenterMode() {
-  presenterActive = false;
-  el.presenterOverlay.classList.remove('presenter-overlay--active');
-  el.presenterOverlay.setAttribute('aria-hidden', 'true');
-  document.body.style.overflow = '';
-}
-
-document.addEventListener('keydown', event => {
-  if (!presenterActive) return;
-  switch (event.key) {
-    case ' ':
-      event.preventDefault();
-      toggleAnswer();
-      break;
-    case 'n':
-    case 'N':
-      event.preventDefault();
-      startRound();
-      break;
-    case 'f':
-    case 'F':
-      event.preventDefault();
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(() => {});
-      } else {
-        document.exitFullscreen().catch(() => {});
-      }
-      break;
-    case 'Escape':
-      exitPresenterMode();
-      if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
-      break;
-  }
-});
-
 // ── Question creator ──────────────────────────────
 function populateCreatorCategories() {
   const categories = [...new Set(questions.map(q => q.category))].sort((a, b) => a.localeCompare(b, 'el'));
@@ -596,8 +519,7 @@ el.newGameBtn.addEventListener('click', newGame);
 
 el.startRoundBtn.addEventListener('click', startRound);
 el.nextQuestionBtn.addEventListener('click', startRound);
-el.revealBtn.addEventListener('click', toggleAnswer);
-el.stopTimerBtn.addEventListener('click', stopTimer);
+el.revealBtn.addEventListener('click', revealAnswer);
 
 el.searchInput.addEventListener('input', renderQuestionBank);
 el.modeSelect.addEventListener('change', updateCounters);
@@ -619,8 +541,7 @@ el.gameScoreboard.addEventListener('click', event => {
   if (playerAction === 'minus') adjustPlayerScore(playerId, -1);
 });
 
-el.presenterLaunchBtn.addEventListener('click', enterPresenterMode);
-el.presenterExitBtn.addEventListener('click', exitPresenterMode);
+el.newGameInlineBtn.addEventListener('click', newGame);
 
 el.generatePromptBtn.addEventListener('click', generateAIPrompt);
 el.copyPromptBtn.addEventListener('click', copyPrompt);
