@@ -211,13 +211,24 @@ function updateGameControlsVisibility() {
   el.revealBtn.style.display = (hasQuestion && !answerRevealed) ? '' : 'none';
 }
 
+function hideAnswerInstantly() {
+  el.answerValue.classList.add('no-transition');
+  el.answerValue.classList.remove('revealed');
+  // Force reflow ώστε να εφαρμοστεί το blur χωρίς animation πριν αλλάξει κείμενο.
+  void el.answerValue.offsetWidth;
+  requestAnimationFrame(() => {
+    el.answerValue.classList.remove('no-transition');
+  });
+}
+
 function loadQuestion(index) {
+  hideAnswerInstantly();
+
   if (index === null || !questions[index]) {
     el.questionNumber.textContent = 'Πάτα «Ας παίξουμε!» για να ξεκινήσεις';
     el.questionText.textContent = 'Δεν έχει φορτωθεί ακόμα ερώτηση.';
     el.categoryPill.textContent = '—';
     el.answerValue.textContent = '—';
-    el.answerValue.classList.remove('revealed');
     currentQuestionIndex = null;
     updateTimerUI();
     updateGameControlsVisibility();
@@ -230,7 +241,6 @@ function loadQuestion(index) {
   el.questionText.textContent = item.question;
   el.categoryPill.textContent = item.category;
   el.answerValue.textContent = item.answer;
-  el.answerValue.classList.remove('revealed');
   updateGameControlsVisibility();
 }
 
