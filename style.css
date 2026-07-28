@@ -243,7 +243,7 @@ label { display:block; margin-bottom:var(--space-2); font-size:var(--text-sm); c
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   flex: 1;
-  min-width: 160px;
+  min-width: 200px;
 }
 .game-score-rank {
   font-size: var(--text-xs);
@@ -255,9 +255,9 @@ label { display:block; margin-bottom:var(--space-2); font-size:var(--text-sm); c
   font-weight: 700;
   font-size: var(--text-sm);
   flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .game-score-badge {
   min-width: 34px;
